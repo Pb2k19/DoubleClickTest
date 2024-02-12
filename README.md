@@ -1,6 +1,7 @@
 **DoubleClickTest**
 
 **Description:**
+
 DoubleClickTest is an .NET 8 Windows Forms application designed specifically to identify and diagnose double-click faults in computer mice.
 
 **Usage Example:**
