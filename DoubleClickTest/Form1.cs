@@ -2,14 +2,18 @@
 using System.Drawing;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace DoubleClickTest;
 
+[SupportedOSPlatform("windows")]
 public partial class MainForm : Form
 {
+    private const int MinNonErrorElapsedTimeMs = 100;
+
     private readonly Stopwatch stopwatch = new();
-    private int count = 0, errorCount = 0;
-    private long fc = 1000;
+    private int clickCount = 0, errorCount = 0;
+    private long fastestClickMs = 9999;
 
     public MainForm()
     {
@@ -18,32 +22,8 @@ public partial class MainForm : Form
 
     private void Form1_Load(object sender, EventArgs e)
     {
-        textBox1.ScrollBars = ScrollBars.Both;
+        OutputTextBox.ScrollBars = ScrollBars.Both;
         SetDefaultValues();
-    }
-
-    void Test(MouseButtons mouse)
-    {
-        stopwatch.Stop();
-        ElapsedMsLabel.Text = stopwatch.ElapsedMilliseconds.ToString();
-        count++;
-        ClickCountLabel.Text = count.ToString();
-        if(fc > stopwatch.ElapsedMilliseconds && stopwatch.ElapsedMilliseconds > 80)
-        {
-            fc = stopwatch.ElapsedMilliseconds;
-            label2.Text = fc.ToString();
-        }
-        if (stopwatch.ElapsedMilliseconds < 100)
-        {
-            button1.BackColor = Color.Red;
-            CheckStateLabel.Text = "ERROR";
-            errorCount++;
-            ErrorClickCountLabel.Text = errorCount.ToString();
-            textBox1.AppendText("\n Fast click number " + count.ToString() + " interval: " + stopwatch.ElapsedMilliseconds.ToString()+"ms  button: "+mouse.ToString());
-            textBox1.AppendText(Environment.NewLine);
-        }
-        stopwatch.Reset();
-        stopwatch.Start();
     }
 
     private void Form1_MouseDown(object sender, MouseEventArgs e)
@@ -61,16 +41,48 @@ public partial class MainForm : Form
         SetDefaultValues();
     }
 
+    void Test(MouseButtons mouse)
+    {
+        stopwatch.Stop();
+        long elapsedTimeMs = stopwatch.ElapsedMilliseconds;
+        stopwatch.Restart();
+
+        clickCount++;
+        ElapsedMsLabel.Text = elapsedTimeMs.ToString();
+        ClickCountLabel.Text = clickCount.ToString();
+
+        if (elapsedTimeMs < fastestClickMs)
+        {
+            fastestClickMs = elapsedTimeMs;
+            FastestClickLabel.Text = fastestClickMs.ToString();
+        }
+
+        if (elapsedTimeMs < MinNonErrorElapsedTimeMs)
+        {
+            errorCount++;
+            ErrorClickCountLabel.Text = errorCount.ToString();
+
+            TestButton.BackColor = Color.Red;
+            CheckStateLabel.Text = "ERROR";
+
+            OutputTextBox.AppendText($"{Environment.NewLine}Error: Click number {clickCount} - interval: {elapsedTimeMs}ms - button: {mouse}{Environment.NewLine}");
+        }
+    }
+
     private void SetDefaultValues()
     {
-        fc = 1000;
-        count = 0;
+        fastestClickMs = 9999;
+        clickCount = 0;
         errorCount = 0;
+
         CheckStateLabel.Text = "OK";
         ClickCountLabel.Text = "0";
-        ErrorClickCountLabel.Text = count.ToString();
-        textBox1.Clear();
-        button1.BackColor = SystemColors.Control;
+        ErrorClickCountLabel.Text = "0";
+        FastestClickLabel.Text = "0";
+        ElapsedMsLabel.Text = "0";
+
+        TestButton.BackColor = SystemColors.Control;
+        OutputTextBox.Clear();
         stopwatch.Reset();
         stopwatch.Start();
     }
